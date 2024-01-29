@@ -1,4 +1,41 @@
 import utils
+from itertools import combinations
+
+def stv(votes):
+    'In the single transferable voting strategy, a the candidates are voted on similar to plurality, and the one with the least votes is eliminated.'
+    'This process is repeated until there is one candidate left, aka the winning candidate. This method takes advantage of the already exisitng plurality function.'
+    candidates = plurality(votes) # the plurality rule can be used to determine which candidate should be eliminated
+    loser = candidates.pop() # the loser candidate needs to be stored so it can be removed from the votes entirely
+
+    for vote in votes: vote.remove(loser[0]) # go through each vote and remove the losing candidate
+    
+    if len(candidates) > 1: return stv(votes) # if there are still more than one candidates, make a recursive call to perform plurality voting again
+    else: return candidates # at this point we have one candidate, which is the winner
+
+def copeland(votes):
+    'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
+    'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
+    'This is done for each vote given as a parameter. The number of points added is the priority of the candidate minus the total number of candidates minus one.'
+
+    candidates = {} # this dictionary will be used to keep track of the voting results.
+    for candidate in votes[0]:
+        candidates[candidate] = 0
+
+    print(candidates)
+    comb = combinations(candidates, 2) 
+    
+    # Print the obtained permutations 
+    #for i in list(comb): 
+    #    print (i)
+
+    head_to_head = {}
+    for i in list(comb): 
+        print(i)
+        head_to_head[i] = (0,0)
+
+
+    print(head_to_head)
+    return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
 
 def borda(votes):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
@@ -15,7 +52,6 @@ def borda(votes):
                 candidates[candidate] = len(vote) - i - 1 # update the candidates score by adding the candidates preference minus the total number of candidates minus one 
       
     return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
-
 
 def plurality(votes):
     'In plurality voting, a vote is achieved by being the first preference. There are no points associated for second or third ranked choice.'
@@ -44,9 +80,15 @@ def main():
     print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
     print("Winner: " + str(borda_result[0])) # announce the winner since the results are not sorted
     
+    copeland_result = copeland(votes) # store the results of the borda voting strategy
+    print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
+    print("Winner: " + str(copeland_result[0])) # announce the winner since the results are not sorted
+    
+    stv_result = stv(votes) # store the results of the borda voting strategy
+    print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the borda voting strategy
+    print("Winner: " + str(stv_result[0])) # announce the winner since the results are not sorted
+    
     print("============================================================")
-
-
 
 if __name__=="__main__": 
     main() 
