@@ -1,10 +1,10 @@
 import utils
 from itertools import combinations
 
-def stv(votes):
+def stv(candidates, voters):
     'In the single transferable voting strategy, a the candidates are voted on similar to plurality, and the one with the least votes is eliminated.'
     'This process is repeated until there is one candidate left, aka the winning candidate. This method takes advantage of the already exisitng plurality function.'
-    candidates = plurality(votes) # the plurality rule can be used to determine which candidate should be eliminated
+    candidates = plurality(candidates, voters) # the plurality rule can be used to determine which candidate should be eliminated
     loser = candidates.pop() # the loser candidate needs to be stored so it can be removed from the votes entirely
 
     for vote in votes: vote.remove(loser[0]) # go through each vote and remove the losing candidate
@@ -37,56 +37,62 @@ def copeland(votes):
     print(head_to_head)
     return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
 
-def borda(votes):
+def borda(candidates, voters):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
     'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
     'This is done for each vote given as a parameter. The number of points added is the priority of the candidate minus the total number of candidates minus one.'
+    candidate_names = list()
+    for c in candidates: candidate_names.append(c.get_name())
 
-    candidates = {} # this dictionary will be used to keep track of the voting results.
-    for vote in votes: # for each vote, the candidates priority will be used to keep track of scores
-        for i in range(len(vote)): # for every vote entry, all candidates need to be iterated through
-            candidate = vote[i] # candidate will contain the current candidate
-            if candidate in candidates: # if the current candidate already exists, simply add a tally (or point) for them based on borda voting rules
-                candidates[candidate] += len(vote) - i - 1 # update the candidates score by adding the candidates preference minus the total number of candidates minus one 
-            else: # at this point the first candidate does not exist, a new element in the collection of candidates needs to be made
-                candidates[candidate] = len(vote) - i - 1 # update the candidates score by adding the candidates preference minus the total number of candidates minus one 
-      
-    return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
+    for voter in voters:
+        for i in range(len(voter.get_preferences())):
+            candidates[candidate_names.index(voter.get_preferences()[i])].increase_votes(len(candidates) - i - 1)
+         
+    result = utils.sort_candidates(candidates)
+    return result
 
-def plurality(votes):
+def plurality(candidates, voters):
     'In plurality voting, a vote is achieved by being the first preference. There are no points associated for second or third ranked choice.'
     'This function goes through a list of preferences and checks if the candidate ranked first already exists in our collection of candidates.'
     'If the candidate already exists, then this is the same as someone else voting for this candidate, so the tally increases by one.'
     'If the candidate does not already exist, then this means this is the candidates first vote. By the end, the dictionary will contain the results from the votes.'
     
-    candidates = {} # this dictionary will be used to keep track of the voting results.
-    for vote in votes: # for each vote, the priority candidate (first choice) needs to be recorded
-        first_candidate = vote[0] # votes is a list of lists, and the very first index of every list is the first choice candidate
-        if first_candidate in candidates: # if the first candidate already exists, simply add a tally (or point) for them
-            candidates[first_candidate] += 1 # update the candidates score by 1
-        else: # at this point the first candidate does not exist, a new element in the collection of candidates needs to be made
-            candidates[first_candidate] = 1 # update the candidates dictionary so this new candidate is there (with a score of one since the candiate was a first choice)
-      
-    return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
+    for vote in voters:
+        top_candidate = vote.get_preferences()[0]
+        for candidate in candidates:
+            if top_candidate == candidate.get_name():
+                candidate.increase_votes()
+
+    result = utils.sort_candidates(candidates)
+    return result
 
 def main(): 
     votes = utils.read_votes_from_file("votes.txt") # use a helper function in order to read from the file (contains lines of voting preferences)
+    candidates = utils.create_candidates(votes[0])
+    for candidate in candidates: candidate.display()
+    
+    print("++++")
+    voters = utils.create_voters(votes)
+    for voter in voters: voter.display()
     print("============================================================")
-    plurality_result = plurality(votes) # store the results of the plurality voting strategy
+    #plurality_result = plurality(votes) # store the results of the plurality voting strategy
+    plurality_result = plurality(candidates.copy(), voters.copy())
     print("Plurality Voting Strategy: " + str(plurality_result)) # print the results using the plurality voting strategy
-    print("Winner: " + str(plurality_result[0])) # announce the winner since the results are not sorted
+    print("Plurality Winner(s): " + str(utils.filter_losers(plurality_result))) # announce the winner since the results are not sorted
     
-    borda_result = borda(votes) # store the results of the borda voting strategy
+    for cand in candidates: cand.reset_votes()
+
+    borda_result = borda(candidates.copy(), voters.copy()) # store the results of the borda voting strategy
     print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
-    print("Winner: " + str(borda_result[0])) # announce the winner since the results are not sorted
+    print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
     
-    copeland_result = copeland(votes) # store the results of the borda voting strategy
-    print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
-    print("Winner: " + str(copeland_result[0])) # announce the winner since the results are not sorted
+    #copeland_result = copeland(votes) # store the results of the copeland voting strategy
+    #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
+    #print("Copeland Winner(s): " + str(copeland_result[0])) # announce the winner since the results are not sorted
     
-    stv_result = stv(votes) # store the results of the borda voting strategy
-    print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the borda voting strategy
-    print("Winner: " + str(stv_result[0])) # announce the winner since the results are not sorted
+    #stv_result = stv(votes) # store the results of the stv voting strategy
+    #print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
+    #print("STV Winner(s): " + str(stv_result[0])) # announce the winner since the results are not sorted
     
     print("============================================================")
 
