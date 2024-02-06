@@ -78,3 +78,9 @@ def filter_losers(candidates):
         if candidate[1] == max_score:
             result.append(candidate)
     return result
+
+def remove_candidate(candidates, removed):
+    for c in candidates:
+        if c.get_name() == removed:
+            candidates.remove(c)
+    return candidates
