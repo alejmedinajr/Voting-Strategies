@@ -21,31 +21,26 @@ def stv(candidates, voters):
     if len(candidates) > 1 and candidate_removed: return stv(candidates, voters)
     else: return utils.sort_candidates(candidates)
    
-def copeland(votes):
+def copeland(candidates, voters):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
     'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
     'This is done for each vote given as a parameter. The number of points added is the priority of the candidate minus the total number of candidates minus one.'
+    candidate_names = list()
+    for c in candidates: candidate_names.append(c.get_name())
+    comparisons = list(combinations(candidate_names, 2))
 
-    candidates = {} # this dictionary will be used to keep track of the voting results.
-    for candidate in votes[0]:
-        candidates[candidate] = 0
-
-    print(candidates)
-    comb = combinations(candidates, 2) 
+    for matchup in comparisons: 
+        c1,c2 = 0,0
+        for voter in voters:
+            preferences = voter.get_preferences()
+            i,j = preferences.index(matchup[0]),preferences.index(matchup[1])
+            if i < j: c1 += 1
+            if j < i: c2 += 1
+        if c1 > c2: candidates[candidate_names.index(matchup[0])].increase_votes()
+        if c2 > c1: candidates[candidate_names.index(matchup[1])].increase_votes()
+           
+    return utils.sort_candidates(candidates)
     
-    # Print the obtained permutations 
-    #for i in list(comb): 
-    #    print (i)
-
-    head_to_head = {}
-    for i in list(comb): 
-        print(i)
-        head_to_head[i] = (0,0)
-
-
-    print(head_to_head)
-    return sorted(candidates.items(), key=lambda x:x[1], reverse=True) # return the sorted results of candidates and their scores
-
 def borda(candidates, voters):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
     'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
@@ -95,9 +90,12 @@ def main():
     print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
     print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
     
-    #copeland_result = copeland(votes) # store the results of the copeland voting strategy
-    #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
-    #print("Copeland Winner(s): " + str(copeland_result[0])) # announce the winner since the results are not sorted
+    for cand in candidates: cand.reset_votes()
+
+    copeland_result = copeland(candidates.copy(), voters.copy()) # store the results of the copeland voting strategy
+    print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
+    print("Copeland Winner(s): " + str(utils.filter_losers(copeland_result))) # announce the winner since the results are not sorted
+    
     for cand in candidates: cand.reset_votes()
 
     stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
