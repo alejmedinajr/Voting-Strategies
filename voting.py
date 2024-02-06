@@ -4,14 +4,23 @@ from itertools import combinations
 def stv(candidates, voters):
     'In the single transferable voting strategy, a the candidates are voted on similar to plurality, and the one with the least votes is eliminated.'
     'This process is repeated until there is one candidate left, aka the winning candidate. This method takes advantage of the already exisitng plurality function.'
-    candidates = plurality(candidates, voters) # the plurality rule can be used to determine which candidate should be eliminated
-    loser = candidates.pop() # the loser candidate needs to be stored so it can be removed from the votes entirely
-
-    for vote in votes: vote.remove(loser[0]) # go through each vote and remove the losing candidate
     
-    if len(candidates) > 1: return stv(votes) # if there are still more than one candidates, make a recursive call to perform plurality voting again
-    else: return candidates # at this point we have one candidate, which is the winner
+    for cand in candidates: cand.reset_votes()
 
+    plurality_result = plurality(candidates, voters) # the plurality rule can be used to determine which candidate should be eliminated
+    loser, min_votes = plurality_result.pop()
+    max_votes = plurality_result[0]
+    candidate_removed = False
+    candidates = utils.remove_candidate(candidates,loser)
+    if min_votes < max_votes[1]:
+        for voter in voters:
+            preferences = voter.get_preferences()
+            voter.update_preferences(preferences.remove(loser))
+        candidate_removed = True
+        
+    if len(candidates) > 1 and candidate_removed: return stv(candidates, voters)
+    else: return utils.sort_candidates(candidates)
+   
 def copeland(votes):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
     'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
@@ -89,10 +98,11 @@ def main():
     #copeland_result = copeland(votes) # store the results of the copeland voting strategy
     #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
     #print("Copeland Winner(s): " + str(copeland_result[0])) # announce the winner since the results are not sorted
-    
-    #stv_result = stv(votes) # store the results of the stv voting strategy
-    #print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
-    #print("STV Winner(s): " + str(stv_result[0])) # announce the winner since the results are not sorted
+    for cand in candidates: cand.reset_votes()
+
+    stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
+    print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
+    print("STV Winner(s): " + str(utils.filter_losers(stv_result))) # announce the winner since the results are not sorted
     
     print("============================================================")
 
