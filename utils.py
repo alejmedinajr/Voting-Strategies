@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt 
+import numpy as np
+
 class Candidate:
     def __init__(self, name, x, y):
         self.name = name
@@ -49,11 +52,16 @@ def read_votes_from_file(filename):
     votes = [x.strip().split(',') for x in file] 
     return votes
 
-def create_candidates(possible_candidates):
+def create_candidates(filename):
+    zip_dictionary = populate_zipcode_dictionary("us_zipcodes.csv")
     candidates = []
-    for candidate in possible_candidates:
-        candidates.append(Candidate(candidate, 0,0))
-
+    with open(filename, "r") as file:
+        lines = [x.strip().split(',') for x in file]
+        for name,zipcode in lines:
+            if zipcode in zip_dictionary:
+                x, y = zip_dictionary[zipcode]
+                candidates.append(Candidate(name, x, y))
+            else: print(f"No coordinates found for zipcode: {zipcode}")
     return candidates
 
 def create_voters(votes):
@@ -84,3 +92,30 @@ def remove_candidate(candidates, removed):
         if c.get_name() == removed:
             candidates.remove(c)
     return candidates
+
+def populate_zipcode_dictionary(filename):
+    zip_dictionary = {}
+    with open(filename, "r") as zipcodes:
+        for line in zipcodes:
+            zipcode, latitude, longitude = line.strip().split(',')
+            zip_dictionary[zipcode] = (float(latitude), float(longitude))
+    return zip_dictionary
+
+def create_graph(candidates, voters):
+    # Taking transpose 
+    candidates_locations = []
+     
+    # Adding labels for each data point
+    for c in candidates:
+        name = c.get_name()
+        x,y = c.get_position()
+        candidates_locations.append([x,y])
+        plt.text(x, y, name, fontsize=4, ha='right', va='bottom')
+    
+    x, y = np.array(candidates_locations).T
+    plt.scatter(x,y) 
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.title('Stadiums')
+    plt.grid(True)
+    plt.show() 

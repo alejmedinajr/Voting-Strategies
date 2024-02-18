@@ -22,38 +22,35 @@ def stv(candidates, voters):
     else: return utils.sort_candidates(candidates)
    
 def copeland(candidates, voters):
-    'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
-    'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
-    'This is done for each vote given as a parameter. The number of points added is the priority of the candidate minus the total number of candidates minus one.'
-    candidate_names = list()
-    for c in candidates: candidate_names.append(c.get_name())
-    comparisons = list(combinations(candidate_names, 2))
+    ''
+    candidate_names = list() # create a list for quick access to candidate names
+    for c in candidates: candidate_names.append(c.get_name()) # populate the list of candidate names
+    comparisons = list(combinations(candidate_names, 2)) # find all matchups that will take place between candidates
 
-    for matchup in comparisons: 
-        c1,c2 = 0,0
-        for voter in voters:
-            preferences = voter.get_preferences()
-            i,j = preferences.index(matchup[0]),preferences.index(matchup[1])
-            if i < j: c1 += 1
-            if j < i: c2 += 1
-        if c1 > c2: candidates[candidate_names.index(matchup[0])].increase_votes()
-        if c2 > c1: candidates[candidate_names.index(matchup[1])].increase_votes()
+    for matchup in comparisons: # each matchup of candidates needs to be taken into consideration
+        c1,c2 = 0,0 # c1 and c2 represent the scores of the current candidatest that are in the current matchup
+        for voter in voters: # each vote needs to be iterated through
+            preferences = voter.get_preferences() # store the individual voter's preferences in a variable
+            i,j = preferences.index(matchup[0]),preferences.index(matchup[1]) # i and j represent the indices of the matchup in the current preference list
+            if i < j: c1 += 1 # if i < j, then candidate 1 has a higher preference rank than candidate 2
+            if j < i: c2 += 1 # if j < i, then candidate 2 has a higher preference rank than candidate 1
+        if c1 > c2: candidates[candidate_names.index(matchup[0])].increase_votes() # increase the votes for candidate 1 if they have more votes on a head to head comparison to candidate 2
+        if c2 > c1: candidates[candidate_names.index(matchup[1])].increase_votes() # increase the votes for candidate 2 if they have more votes on a head to head comparison to candidate 1
            
-    return utils.sort_candidates(candidates)
+    return utils.sort_candidates(candidates) # return a sorted list of candidates in descending order based on total head to head wins
     
 def borda(candidates, voters):
     'In the borda voting strategy, a vote is achieved by adding different points based on the candidate preferences.'
     'This function goes through a list of votes (given in ranked preferences), and assigns points to the candidate based on their rank.'
     'This is done for each vote given as a parameter. The number of points added is the priority of the candidate minus the total number of candidates minus one.'
-    candidate_names = list()
-    for c in candidates: candidate_names.append(c.get_name())
+    candidate_names = list() # list of candidate names that will be used to find the index of a specific candidate by name
+    for c in candidates: candidate_names.append(c.get_name()) # adding each candidate name to the list of candidate names
 
-    for voter in voters:
-        for i in range(len(voter.get_preferences())):
-            candidates[candidate_names.index(voter.get_preferences()[i])].increase_votes(len(candidates) - i - 1)
+    for voter in voters: # every voter needs to be iterated through
+        for i in range(len(voter.get_preferences())): # each individual preference of a single voter needs to be iterated since borda relies on preference to increase the vote count
+            candidates[candidate_names.index(voter.get_preferences()[i])].increase_votes(len(candidates) - i - 1) # the current candidate will have its vote count inreased by its position in the voter's preference list
          
-    result = utils.sort_candidates(candidates)
-    return result
+    return utils.sort_candidates(candidates) # return the sorted list of candidates in descending order based on their total votes
 
 def plurality(candidates, voters):
     'In plurality voting, a vote is achieved by being the first preference. There are no points associated for second or third ranked choice.'
@@ -61,48 +58,51 @@ def plurality(candidates, voters):
     'If the candidate already exists, then this is the same as someone else voting for this candidate, so the tally increases by one.'
     'If the candidate does not already exist, then this means this is the candidates first vote. By the end, the dictionary will contain the results from the votes.'
     
-    for vote in voters:
-        top_candidate = vote.get_preferences()[0]
-        for candidate in candidates:
-            if top_candidate == candidate.get_name():
-                candidate.increase_votes()
+    for vote in voters: # every voter needs to be accounted for
+        top_candidate = vote.get_preferences()[0] # the top_candidate for an individual is at the 0th index of a voters preferences list
+        for candidate in candidates: # every candidate needs to be iterated through in order to determine if the current candidate is the top_candidate that should receive a vote
+            if top_candidate == candidate.get_name(): # current candidate is the top candidate
+                candidate.increase_votes() # increase the candidates vote count by 1 (default value)
 
-    result = utils.sort_candidates(candidates)
-    return result
+    return utils.sort_candidates(candidates) # return sorted list of candidates in descending order based on total votes
 
 def main(): 
-    votes = utils.read_votes_from_file("votes.txt") # use a helper function in order to read from the file (contains lines of voting preferences)
-    candidates = utils.create_candidates(votes[0])
-    for candidate in candidates: candidate.display()
-    
+    candidates = utils.create_candidates("stadiums.csv")
+    print(str(candidates))
+
+    utils.create_graph(candidates, None) # currently no data for voters
     print("++++")
-    voters = utils.create_voters(votes)
-    for voter in voters: voter.display()
+    #voters = utils.create_voters(votes)
+    #for voter in voters: voter.display()
+
+    #utils.create_graph(candidates, voters)
+
     print("============================================================")
     #plurality_result = plurality(votes) # store the results of the plurality voting strategy
-    plurality_result = plurality(candidates.copy(), voters.copy())
-    print("Plurality Voting Strategy: " + str(plurality_result)) # print the results using the plurality voting strategy
-    print("Plurality Winner(s): " + str(utils.filter_losers(plurality_result))) # announce the winner since the results are not sorted
+    #plurality_result = plurality(candidates.copy(), voters.copy())
+    #print("Plurality Voting Strategy: " + str(plurality_result)) # print the results using the plurality voting strategy
+    #print("Plurality Winner(s): " + str(utils.filter_losers(plurality_result))) # announce the winner since the results are not sorted
     
-    for cand in candidates: cand.reset_votes()
+    #for cand in candidates: cand.reset_votes()
 
-    borda_result = borda(candidates.copy(), voters.copy()) # store the results of the borda voting strategy
-    print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
-    print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
+    #borda_result = borda(candidates.copy(), voters.copy()) # store the results of the borda voting strategy
+    #print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
+    #print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
     
-    for cand in candidates: cand.reset_votes()
+    #for cand in candidates: cand.reset_votes()
 
-    copeland_result = copeland(candidates.copy(), voters.copy()) # store the results of the copeland voting strategy
-    print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
-    print("Copeland Winner(s): " + str(utils.filter_losers(copeland_result))) # announce the winner since the results are not sorted
+    #copeland_result = copeland(candidates.copy(), voters.copy()) # store the results of the copeland voting strategy
+    #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
+    #print("Copeland Winner(s): " + str(utils.filter_losers(copeland_result))) # announce the winner since the results are not sorted
     
-    for cand in candidates: cand.reset_votes()
+    #for cand in candidates: cand.reset_votes()
 
-    stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
-    print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
-    print("STV Winner(s): " + str(utils.filter_losers(stv_result))) # announce the winner since the results are not sorted
+    #stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
+    #print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
+    #print("STV Winner(s): " + str(utils.filter_losers(stv_result))) # announce the winner since the results are not sorted
     
     print("============================================================")
+    
 
 if __name__=="__main__": 
     main() 
