@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt 
 import numpy as np
+import geopandas
+from shapely.geometry import Point
 
 class Candidate:
     def __init__(self, name, x, y):
@@ -101,21 +103,82 @@ def populate_zipcode_dictionary(filename):
             zip_dictionary[zipcode] = (float(latitude), float(longitude))
     return zip_dictionary
 
+def populate_population_dictionary(filename):
+    pop_dictionary = {}
+    with open(filename, "r") as zipcodes:
+        for line in zipcodes:
+            #print(line)
+            #print(line.strip().split(','))
+            pop_size, zip = line.strip().split(',')
+            pop_dictionary[zip] = int(pop_size)
+    return pop_dictionary 
+
 def create_graph(candidates, voters):
-    # Taking transpose 
+    # Taking transpose
+    #states = geopandas.read_file('usa-states-census-2014.shp')
+    #states = states.to_crs("EPSG:4326")
+    #states.boundary.plot()
+
     candidates_locations = []
-     
+    long =[]
+    lat =[]
+
     # Adding labels for each data point
     for c in candidates:
         name = c.get_name()
         x,y = c.get_position()
         candidates_locations.append([x,y])
-        plt.text(x, y, name, fontsize=4, ha='right', va='bottom')
+        long.append(x)
+        lat.append(y)
     
-    x, y = np.array(candidates_locations).T
-    plt.scatter(x,y) 
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    plt.title('Stadiums')
-    plt.grid(True)
-    plt.show() 
+    us_map = geopandas.read_file('usa-states-census-2014.shp')
+
+    fig,ax = plt.subplots(figsize = (15,15))
+    us_map = us_map.to_crs("EPSG:4326")
+
+    us_map.boundary.plot(ax = ax)
+
+    geometry = [Point(xy) for xy in zip(lat,long)]
+    geo_df = geopandas.GeoDataFrame(geometry = geometry)
+    print(geo_df)
+    g = geo_df.plot(ax = ax, markersize = 30, color = 'red', marker='*', label = 'Stadiums')
+    for c in candidates:
+        name = c.get_name()
+        x,y = c.get_position()
+        ax.text(y, x, name, fontsize=7, ha='right', va='bottom', fontweight='bold')
+
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.title('Stadium Locations on US Map')
+    plt.legend()
+    plt.show()
+
+def populate_voters(filename, zip_dictionary, candidates):
+    pop_dictionary = populate_population_dictionary(filename)
+    voters = []
+    #print(pop_dictionary)
+    i = 0
+    for location in pop_dictionary:
+        #print(location)
+        zip = location
+        for person in range(pop_dictionary[location]):
+            if zip in zip_dictionary: 
+                x,y = zip_dictionary[zip]
+                voters.append(Voter(f"Voter{i}", x, y, populate_preferences(x,y, candidates)))
+                i += 1
+            else: print(f"No coordinates found for zipcode: {zip}")
+    #print(f"HERE: {i}")
+    return voters
+
+def populate_preferences(x,y, candidates):
+    distances = []
+    preferences = []
+    for cand in candidates:
+        d = abs(x - cand.get_position()[0]) + abs(y - cand.get_position()[1])
+        distances.append((d, cand.get_name()))
+    
+    distances.sort(key=lambda a: a[0])
+    for d in distances:
+        preferences.append(d[1])
+
+    return preferences

@@ -67,10 +67,15 @@ def plurality(candidates, voters):
     return utils.sort_candidates(candidates) # return sorted list of candidates in descending order based on total votes
 
 def main(): 
-    candidates = utils.create_candidates("stadiums.csv")
+    candidates = utils.create_candidates("2023 Tour Stadiums.csv")
     print(str(candidates))
-
-    utils.create_graph(candidates, None) # currently no data for voters
+    zip_dictionary = utils.populate_zipcode_dictionary("us_zipcodes.csv")
+    #utils.create_graph(candidates, None) # currently no data for voters
+    voters = utils.populate_voters("2023 Tour.csv", zip_dictionary, candidates)
+    print(len(voters))
+    #for v in voters:
+        #print(v.get_id())
+        #print(v.get_preferences())
     print("++++")
     #voters = utils.create_voters(votes)
     #for voter in voters: voter.display()
@@ -78,28 +83,28 @@ def main():
     #utils.create_graph(candidates, voters)
 
     print("============================================================")
-    #plurality_result = plurality(votes) # store the results of the plurality voting strategy
-    #plurality_result = plurality(candidates.copy(), voters.copy())
-    #print("Plurality Voting Strategy: " + str(plurality_result)) # print the results using the plurality voting strategy
-    #print("Plurality Winner(s): " + str(utils.filter_losers(plurality_result))) # announce the winner since the results are not sorted
+    #plurality_result = plurality(voters) # store the results of the plurality voting strategy
+    plurality_result = plurality(candidates.copy(), voters.copy())
+    print("Plurality Voting Strategy: " + str(plurality_result)) # print the results using the plurality voting strategy
+    print("Plurality Winner(s): " + str(utils.filter_losers(plurality_result))) # announce the winner since the results are not sorted
     
-    #for cand in candidates: cand.reset_votes()
+    for cand in candidates: cand.reset_votes()
 
-    #borda_result = borda(candidates.copy(), voters.copy()) # store the results of the borda voting strategy
-    #print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
-    #print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
+    borda_result = borda(candidates.copy(), voters.copy()) # store the results of the borda voting strategy
+    print("\nBorda Voting Strategy: " + str(borda_result)) # print the results using the borda voting strategy
+    print("Borda Winner(s): " + str(utils.filter_losers(borda_result))) # announce the winner since the results are not sorted
     
-    #for cand in candidates: cand.reset_votes()
+    for cand in candidates: cand.reset_votes()
 
-    #copeland_result = copeland(candidates.copy(), voters.copy()) # store the results of the copeland voting strategy
-    #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
-    #print("Copeland Winner(s): " + str(utils.filter_losers(copeland_result))) # announce the winner since the results are not sorted
+    copeland_result = copeland(candidates.copy(), voters.copy()) # store the results of the copeland voting strategy
+    print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the copeland voting strategy
+    print("Copeland Winner(s): " + str(utils.filter_losers(copeland_result))) # announce the winner since the results are not sorted
     
-    #for cand in candidates: cand.reset_votes()
+    for cand in candidates: cand.reset_votes()
 
-    #stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
-    #print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
-    #print("STV Winner(s): " + str(utils.filter_losers(stv_result))) # announce the winner since the results are not sorted
+    stv_result = stv(candidates.copy(), voters.copy()) # store the results of the stv voting strategy
+    print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
+    print("STV Winner(s): " + str(utils.filter_losers(stv_result))) # announce the winner since the results are not sorted
     
     print("============================================================")
     
