@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import geopandas
 from shapely.geometry import Point
+import seaborn as sb
+import math
 
 class Candidate:
     def __init__(self, name, x, y):
@@ -55,7 +57,7 @@ def read_votes_from_file(filename):
     return votes
 
 def create_candidates(filename):
-    zip_dictionary = populate_zipcode_dictionary("us_zipcodes.csv")
+    zip_dictionary = populate_zipcode_dictionary("datasets/us_zipcodes.csv")
     candidates = []
     with open(filename, "r") as file:
         lines = [x.strip().split(',') for x in file]
@@ -109,17 +111,14 @@ def populate_population_dictionary(filename):
         for line in zipcodes:
             #print(line)
             #print(line.strip().split(','))
-            pop_size, zip = line.strip().split(',')
+            city, stadium, pop_size, zip = line.strip().split(',')
             pop_dictionary[zip] = int(pop_size)
     return pop_dictionary 
 
 def create_graph(candidates, voters):
-    # Taking transpose
-    #states = geopandas.read_file('usa-states-census-2014.shp')
-    #states = states.to_crs("EPSG:4326")
-    #states.boundary.plot()
 
     candidates_locations = []
+    voter_locations = []
     long =[]
     lat =[]
 
@@ -131,7 +130,12 @@ def create_graph(candidates, voters):
         long.append(x)
         lat.append(y)
     
-    us_map = geopandas.read_file('usa-states-census-2014.shp')
+    for v in voters:
+        x,y = v.get_position()
+        voter_locations.append([x,y])
+
+
+    us_map = geopandas.read_file('maps/usa-states-census-2014.shp')
 
     fig,ax = plt.subplots(figsize = (15,15))
     us_map = us_map.to_crs("EPSG:4326")
@@ -142,6 +146,10 @@ def create_graph(candidates, voters):
     geo_df = geopandas.GeoDataFrame(geometry = geometry)
     print(geo_df)
     g = geo_df.plot(ax = ax, markersize = 30, color = 'red', marker='*', label = 'Stadiums')
+    
+    #voter_locations = np.array([v.get_position() for v in voters])
+    print(len(voter_locations))
+    #hm = sb.heatmap(data=voter_locations, annot=True)
     for c in candidates:
         name = c.get_name()
         x,y = c.get_position()
@@ -174,11 +182,21 @@ def populate_preferences(x,y, candidates):
     distances = []
     preferences = []
     for cand in candidates:
-        d = abs(x - cand.get_position()[0]) + abs(y - cand.get_position()[1])
+        d = euclidean_preference((x,y), (cand.get_position()[0], cand.get_position()[1]))
         distances.append((d, cand.get_name()))
     
-    distances.sort(key=lambda a: a[0])
+    distances.sort(key=lambda a: a[0]) # sorting based on the distance, not candidate name
     for d in distances:
         preferences.append(d[1])
 
     return preferences
+
+def euclidean_preference(pos1, pos2):
+    x1,y1 = pos1
+    x2,y2 = pos2
+
+    return math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1), 2))
+
+def print_results(results, save_to):
+    with open(save_to, 'w'):
+        print(results, file=save_to)
