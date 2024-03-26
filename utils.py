@@ -47,6 +47,9 @@ class Voter:
 
     def update_preferences(self, new_preferences): self.total_votes = new_preferences
 
+    def remove_candidate(self, candidate): 
+        if candidate in self.preferences: self.preferences.remove(candidate)
+
     def update_position(self, new_position): self.x, self.y = new_position
 
     def display(self): print(str(self))

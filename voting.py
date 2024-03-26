@@ -5,40 +5,37 @@ from itertools import combinations
 def stv(candidates, voters, committee, k=1):
     'In the single transferable voting strategy, a the candidates are voted on similar to plurality, and the one with the least votes is eliminated.'
     'This process is repeated until there is one candidate left, aka the winning candidate. This method takes advantage of the already exisitng plurality function.'
-    #print("here")
-    if len(committee) < k:
+    while len(committee) < k and candidates:
+        #print(committee)
+        #print(candidates)
         for cand in candidates: cand.reset_votes()
-
-        round = plurality(candidates, voters)[0] # the plurality rule can be used to determine which candidate should be eliminated
-        new_candidate = round[0][0]
-        plurality_score = round[0][1]
+        # if added to committee
+        plurality_round,_ = plurality(candidates, voters, k) # the plurality rule can be used to determine which candidate should be eliminated
+        #print(plurality_round)
+        potential_candidate, plurality_score = plurality_round[0]
+        
+        #print(potential_candidate)
+        #print(plurality_score)
         n = 0
-        for _,score in round: n += score
+        for _,score in plurality_round: n += score
+        print(plurality_score >= math.floor(n/(k+1)) + 1)
+        if plurality_score >= math.floor(n/(k+1)) + 1: 
+            committee.append(potential_candidate) # append to committee
+            for voter in voters: 
+                voter.remove_candidate(potential_candidate) # remove from voters
+            
+            #for c in candidates: print(c.get_name())
+            candidates = candidates[1:]
+            
+            #candidates.remove(potential_candidate) # remove from candidates
+        else: 
+            for voter in voters: 
+                worst_candidate = plurality_round[len(plurality_round)-1]
+                voter.remove_candidate(worst_candidate) # remove from voters
+            candidates = candidates[:-1]
+            # remove from candidates
 
-        candidate_removed = False # a boolean flag used to keep track of if we removed any candidates (initially false)
-        new_member = plurality_score >= math.floor(n/(k+1)) + 1
-        if new_member:
-            committee.append(new_candidate)
-            for voter in voters: # go through every voter and remove the loser from their preferences
-                preferences = voter.get_preferences()
-                voter.update_preferences(preferences.remove(new_candidate))
-            candidate_removed = True
-        else:
-            removed_candidate, min_votes = round.pop() # loser and min_votes store the candidate name and number of votes
-            max_votes = round[0] # the max_votes is used to keep track and make sure we do not have multiple winners
-            
-            candidates = utils.remove_candidate(candidates,removed_candidate) # using helper function to remove the loser candidate
-            
-            if min_votes < max_votes[1]: # we only want to remove the loser from the voters if it is not the same as the max_votes
-                for voter in voters: # go through every voter and remove the loser from their preferences
-                    preferences = voter.get_preferences()
-                    voter.update_preferences(preferences.remove(removed_candidate))
-                candidate_removed = True # set boolean flag to true since a candidate was removed from all preferences
-            
-        if len(candidates) > 1 and candidate_removed: return stv(candidates, voters, committee) # make recursive call if there are sill candidates to remove
-        else: return committee # at this point we have a winner candidate, return the results
-    else: return committee
-
+    return committee
 def copeland(candidates, voters, k=1):
     'This is the voting strategy that compares all candidates in a head to head matchup, and one vote is representative'
     'of the candidate winning a matchup.'
@@ -107,26 +104,27 @@ def main():
         print(f"========= k: {k} ==========")
         for c,v,n in scenarios:
             print(n)
-            #plurality_result = plurality(c.copy(), v.copy(), k)
-            #print("Plurality Voting Strategy: " + str(plurality_result[1])) # print the results using the plurality voting strategy
+            plurality_result = plurality(c.copy(), v.copy(), k)
+            print("Plurality Voting Strategy: " + str(plurality_result[1])) # print the results using the plurality voting strategy
             #print("Plurality Voting Strategy total: " + str(plurality_result[0])) # print the results using the plurality voting strategy
-            
-            #for cand in c: cand.reset_votes() # reset votes
+            for cand in c: cand.reset_votes() # reset votes
 
-            #borda_result = borda(c.copy(), v.copy(), k) # store the results of the borda voting strategy
-            #print("\nBorda Voting Strategy: " + str(borda_result[1])) # print the results using the borda voting strategy
+            borda_result = borda(c.copy(), v.copy(), k) # store the results of the borda voting strategy
+            print("\nBorda Voting Strategy: " + str(borda_result[1])) # print the results using the borda voting strategy
             
             for cand in c: cand.reset_votes() # reset votes
 
-            #copeland_result = copeland(c.copy(), v.copy(), k) # store the results of the copeland voting strategy
-            #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
+            copeland_result = copeland(c.copy(), v.copy(), k) # store the results of the copeland voting strategy
+            print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
 
-            #for cand in c: cand.reset_votes() # reset votes
+            for cand in c: cand.reset_votes() # reset votes
 
             stv_result = stv(c.copy(), v.copy(), [], k) # store the results of the stv voting strategy
             print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
 
             print("============================================================")
-            
+            f = open(f"test_results_{n}_k{k}.txt", "a")
+            f.write(f"Plurality Results: {plurality_result[1]}\nBorda Results: {borda_result[1]}\nCopeland Results: {copeland_result}\nSTV Results: {stv_result}")
+            f.close()
 if __name__=="__main__": 
     main() 
