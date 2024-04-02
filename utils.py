@@ -45,7 +45,7 @@ class Voter:
 
     def get_preferences(self): return self.preferences
 
-    def update_preferences(self, new_preferences): self.total_votes = new_preferences
+    def update_preferences(self, new_preferences): self.preferences = new_preferences
 
     def remove_candidate(self, candidate): 
         if candidate in self.preferences: self.preferences.remove(candidate)
@@ -153,15 +153,22 @@ def create_graph(candidates, voters):
     #voter_locations = np.array([v.get_position() for v in voters])
     print(len(voter_locations))
     #hm = sb.heatmap(data=voter_locations, annot=True)
-    for c in candidates:
-        name = c.get_name()
-        x,y = c.get_position()
-        ax.text(y, x, name, fontsize=7, ha='right', va='bottom', fontweight='bold')
+    #for c in candidates:
+    #    name = c.get_name()
+    #    x,y = c.get_position()
+    #    ax.text(y, x, name, fontsize=7, ha='right', va='bottom', fontweight='bold')
 
+    plt.axis('square')
     plt.xlabel('Longitude')
     plt.ylabel('Latitude')
     plt.title('Stadium Locations on US Map')
     plt.legend()
+    
+    #plt.gca().set_aspect('equal', adjustable='box')
+    #plt.axis('scaled')
+    #plt.axis('square')
+
+    plt.draw()
     plt.show()
 
 def populate_voters(filename, zip_dictionary, candidates):

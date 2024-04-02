@@ -3,39 +3,35 @@ import math
 from itertools import combinations
 
 def stv(candidates, voters, committee, k=1):
-    'In the single transferable voting strategy, a the candidates are voted on similar to plurality, and the one with the least votes is eliminated.'
-    'This process is repeated until there is one candidate left, aka the winning candidate. This method takes advantage of the already exisitng plurality function.'
-    while len(committee) < k and candidates:
-        #print(committee)
-        #print(candidates)
-        for cand in candidates: cand.reset_votes()
-        # if added to committee
-        plurality_round,_ = plurality(candidates, voters, k) # the plurality rule can be used to determine which candidate should be eliminated
+    candidates_copy = candidates[:])
+    voters_copy = voters[:]
+    while len(committee) < k and candidates_copy:
+        for cand in candidates_copy: cand.reset_votes()
+
+        plurality_round, _ = plurality(candidates_copy, voters_copy, k) # contains information of the plurality round
+        potential_candidate, plurality_score = plurality_round[0] # get the top performing candidates and plurality score
         #print(plurality_round)
-        potential_candidate, plurality_score = plurality_round[0]
-        
         #print(potential_candidate)
-        #print(plurality_score)
-        n = 0
-        for _,score in plurality_round: n += score
-        print(plurality_score >= math.floor(n/(k+1)) + 1)
-        if plurality_score >= math.floor(n/(k+1)) + 1: 
-            committee.append(potential_candidate) # append to committee
-            for voter in voters: 
-                voter.remove_candidate(potential_candidate) # remove from voters
-            
-            #for c in candidates: print(c.get_name())
-            candidates = candidates[1:]
-            
-            #candidates.remove(potential_candidate) # remove from candidates
-        else: 
-            for voter in voters: 
-                worst_candidate = plurality_round[len(plurality_round)-1]
-                voter.remove_candidate(worst_candidate) # remove from voters
-            candidates = candidates[:-1]
-            # remove from candidates
+        total_votes = sum(score for _, score in plurality_round)
+        #print(total_votes)
+        threshold = math.floor(total_votes / (k + 1)) + 1 # formula to determine addition of candidate
+
+        if plurality_score >= threshold:
+            committee.append(potential_candidate) # potential candidate meets threshold to be added to committe
+            candidates_copy = utils.remove_candidate(candidates_copy, potential_candidate) # remove the candidate from the list since they are now in committee 
+
+        else: # the candidate with the fewest votes (worst-performing candidate) should be removed
+            worst_candidate, _ = plurality_round[-1] # the round is sorted, so this has the results of the worst performing candidate
+            #print(worst_candidate)
+            candidates_copy = utils.remove_candidate(candidates_copy, worst_candidate) # Remove worst-performing candidate from the candidate list
+
+        remaining_candidates = candidates_copy[:]  # copy (may be redundant)
+        for voter in voters_copy: # update voter preferences based on the remaining candidates
+            x, y = voter.get_position() # position needs to be used to update the preferences of each voter
+            voter.update_preferences(utils.populate_preferences(x, y, remaining_candidates)) 
 
     return committee
+
 def copeland(candidates, voters, k=1):
     'This is the voting strategy that compares all candidates in a head to head matchup, and one vote is representative'
     'of the candidate winning a matchup.'
@@ -104,18 +100,17 @@ def main():
         print(f"========= k: {k} ==========")
         for c,v,n in scenarios:
             print(n)
-            plurality_result = plurality(c.copy(), v.copy(), k)
-            print("Plurality Voting Strategy: " + str(plurality_result[1])) # print the results using the plurality voting strategy
-            #print("Plurality Voting Strategy total: " + str(plurality_result[0])) # print the results using the plurality voting strategy
-            for cand in c: cand.reset_votes() # reset votes
+            #plurality_result = plurality(c.copy(), v.copy(), k)
+            #print("Plurality Voting Strategy: " + str(plurality_result[1])) # print the results using the plurality voting strategy
+            #for cand in c: cand.reset_votes() # reset votes
 
-            borda_result = borda(c.copy(), v.copy(), k) # store the results of the borda voting strategy
-            print("\nBorda Voting Strategy: " + str(borda_result[1])) # print the results using the borda voting strategy
+            #borda_result = borda(c.copy(), v.copy(), k) # store the results of the borda voting strategy
+            #print("\nBorda Voting Strategy: " + str(borda_result[1])) # print the results using the borda voting strategy
             
-            for cand in c: cand.reset_votes() # reset votes
+            #for cand in c: cand.reset_votes() # reset votes
 
-            copeland_result = copeland(c.copy(), v.copy(), k) # store the results of the copeland voting strategy
-            print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
+            #copeland_result = copeland(c.copy(), v.copy(), k) # store the results of the copeland voting strategy
+            #print("\nCopeland Voting Strategy: " + str(copeland_result)) # print the results using the borda voting strategy
 
             for cand in c: cand.reset_votes() # reset votes
 
@@ -123,8 +118,8 @@ def main():
             print("\nSTV Voting Strategy: " + str(stv_result)) # print the results using the stv voting strategy
 
             print("============================================================")
-            f = open(f"test_results_{n}_k{k}.txt", "a")
-            f.write(f"Plurality Results: {plurality_result[1]}\nBorda Results: {borda_result[1]}\nCopeland Results: {copeland_result}\nSTV Results: {stv_result}")
-            f.close()
+            #f = open(f"test_results_{n}_k{k}.txt", "a")
+            #f.write(f"Plurality Results: {plurality_result[1]}\nBorda Results: {borda_result[1]}\nCopeland Results: {copeland_result}\nSTV Results: {stv_result}")
+            #f.close()
 if __name__=="__main__": 
     main() 
